@@ -7,6 +7,8 @@ const connectDB = require("./src/config/database");
 const testRoutes = require("./src/routes/test.routes");
 const traderRoutes = require("./src/routes/trader.routes");
 const webhookRoutes = require("./src/routes/webhook.routes");
+const jobSeekerRoutes = require("./src/routes/jobseeker.routes");
+const jobRoutes = require("./src/routes/job.routes");
 
 const app = express();
 connectDB();
@@ -27,6 +29,8 @@ app.get("/health", (req, res) => {
 app.use("/api/test", testRoutes);
 app.use("/api/traders", traderRoutes);
 app.use("/api/webhooks", webhookRoutes);
+app.use("/api/jobseekers", jobSeekerRoutes);
+app.use("/api/jobs", jobRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
