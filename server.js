@@ -3,9 +3,10 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 require("dotenv").config();
-const testRoutes = require("./src/routes/test.routes");
 const connectDB = require("./src/config/database");
+const testRoutes = require("./src/routes/test.routes");
 const traderRoutes = require("./src/routes/trader.routes");
+const webhookRoutes = require("./src/routes/webhook.routes");
 
 const app = express();
 connectDB();
@@ -25,6 +26,7 @@ app.get("/health", (req, res) => {
 });
 app.use("/api/test", testRoutes);
 app.use("/api/traders", traderRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
