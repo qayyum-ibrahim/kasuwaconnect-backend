@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
+const testRoutes = require('./src/routes/test.routes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV
   });
 });
+app.use('/api/test', testRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
