@@ -5,6 +5,7 @@ const morgan = require("morgan");
 require("dotenv").config();
 const testRoutes = require("./src/routes/test.routes");
 const connectDB = require("./src/config/database");
+const traderRoutes = require("./src/routes/trader.routes");
 
 const app = express();
 connectDB();
@@ -23,6 +24,7 @@ app.get("/health", (req, res) => {
   });
 });
 app.use("/api/test", testRoutes);
+app.use("/api/traders", traderRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

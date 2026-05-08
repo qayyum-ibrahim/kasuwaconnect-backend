@@ -7,7 +7,11 @@ const traderSchema = new mongoose.Schema(
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, unique: true, trim: true },
     email: { type: String, trim: true, lowercase: true },
-
+    bvn: { type: String, required: true, trim: true },
+    dob: { type: String, required: true },
+    address: { type: String, required: true, trim: true },
+    gender: { type: String, required: true, enum: [1, 2] }, 
+    
     // Trade Info
     tradeCategory: {
       type: String,

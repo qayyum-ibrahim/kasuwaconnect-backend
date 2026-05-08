@@ -22,7 +22,11 @@ const createVirtualAccount = async ({
   lastName,
   phone,
   email,
+  dob,
   bvn,
+  address,
+  gender,
+  customer_identifier,
 }) => {
   const response = await squadClient.post("/virtual-account", {
     first_name: firstName,
@@ -30,6 +34,10 @@ const createVirtualAccount = async ({
     mobile_num: phone,
     email,
     bvn,
+    dob,
+    address,
+    gender,
+    customer_identifier,
     beneficiary_account: "0000000000",
   });
   return response.data;
