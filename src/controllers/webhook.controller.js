@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const Trader = require("../models/Trader.model");
 const Transaction = require("../models/Transaction.model");
+const { scoreTrader } = require("../services/ai.service");
 
 // Verify the request is genuinely from Squad
 const verifySquadSignature = (requestBody, squadSignatureHeader) => {
@@ -104,19 +105,38 @@ const handleSquadWebhook = async (req, res) => {
     });
 
     // 7. Update trader totals
-    await Trader.findByIdAndUpdate(trader._id, {
-      $inc: {
-        totalTransactions: 1,
-        totalVolume: amountInNaira,
+    const updatedTrader = await Trader.findByIdAndUpdate(
+      trader._id,
+      {
+        $inc: {
+          totalTransactions: 1,
+          totalVolume: amountInNaira,
+        },
       },
-    });
+      { returnDocument: "after" }, // return updated document
+    );
 
     console.log(
       `✅ Transaction saved: ${amountInNaira} NGN for trader ${trader.firstName} ${trader.lastName}`,
     );
-    console.log(
-      `   Trader totals → transactions: ${trader.totalTransactions + 1}, volume: ${trader.totalVolume + amountInNaira} NGN`,
-    );
+
+    // 8. Trigger async credit score update
+    // Don't await — let it run in background so webhook response stays fast
+    scoreTrader(updatedTrader)
+      .then(async (scoreResult) => {
+        if (scoreResult) {
+          await Trader.findByIdAndUpdate(trader._id, {
+            creditScore: scoreResult.credit_score,
+            creditTier: scoreResult.credit_tier,
+          });
+          console.log(
+            `📊 Credit score updated: ${trader.firstName} → ${scoreResult.credit_score} (${scoreResult.credit_tier})`,
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Background scoring failed:", err.message);
+      });
   } catch (error) {
     console.error("Webhook processing error:", error);
     // Note: we already sent 200, so Squad won't retry
@@ -131,12 +151,10 @@ const testFireWebhook = async (req, res) => {
     const { virtualAccountNumber, amount = 5000 } = req.query;
 
     if (!virtualAccountNumber) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "virtualAccountNumber query param required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "virtualAccountNumber query param required",
+      });
     }
 
     // Simulate a Squad webhook payload
