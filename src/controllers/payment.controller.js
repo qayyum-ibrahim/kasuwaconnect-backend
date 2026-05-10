@@ -12,15 +12,7 @@ const {
 // Employer pays a hired job seeker
 const payWorker = async (req, res) => {
   try {
-    const {
-      traderId,
-      seekerId,
-      jobId,
-      amount,
-      bankCode,
-      accountNumber,
-      accountName,
-    } = req.body;
+    const { traderId, seekerId, jobId } = req.body;
 
     // 1. Validate all parties exist
     const [trader, seeker, job] = await Promise.all([
@@ -39,6 +31,14 @@ const payWorker = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Job seeker not found" });
     }
+    // ← Pull bank details from seeker's Squad virtual account
+    const accountNumber =
+      seeker.squadVirtualAccount?.accountNumber || "0000000000";
+    const accountName =
+      seeker.squadVirtualAccount?.accountName ||
+      `${seeker.firstName} ${seeker.lastName}`;
+    const bankName = seeker.squadVirtualAccount?.bankName || "Squad";
+
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
@@ -61,7 +61,13 @@ const payWorker = async (req, res) => {
         message: "You are not authorized to pay for this job",
       });
     }
-
+    const amount = job.payAmount;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Job has no valid pay amount set",
+      });
+    }
     // 2. Build a unique transaction reference
     const transactionRef = `KCW_${traderId}_${seekerId}_${Date.now()}`;
 
@@ -69,7 +75,7 @@ const payWorker = async (req, res) => {
     const squadResponse = await inititatePayout({
       transactionRef,
       amount,
-      bankCode: bankCode || "000", // sandbox test bank code
+      bankCode: "000", // sandbox test bank code
       nipCode: "0000000000",
       accountNumber:
         accountNumber ||
@@ -128,7 +134,12 @@ const payWorker = async (req, res) => {
       data: {
         transactionRef,
         amount,
-        recipient: `${seeker.firstName} ${seeker.lastName}`,
+        recipient: {
+          name: `${seeker.firstName} ${seeker.lastName}`,
+          accountNumber,
+          accountName,
+          bankName,
+        },
         job: job.title,
         squadResponse: squadResponse.data,
       },
