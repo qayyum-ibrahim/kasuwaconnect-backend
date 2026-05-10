@@ -38,29 +38,26 @@ app.use("/api/payments", paymentRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`KasuwaConnect API running on port ${PORT}`);
+  keepAlive();
 });
 const keepAlive = () => {
-  setInterval(
-    async () => {
-      // Ping the AI service
-      try {
-        await axios.get(`${process.env.AI_SERVICE_URL}/health`);
-        console.log("✅ AI service keep-alive ping sent");
-      } catch (e) {
-        console.error("❌ AI keep-alive failed:", e.message);
-      }
+  const ping = async () => {
+    try {
+      await axios.get(`${process.env.AI_SERVICE_URL}/health`);
+      console.log("✅ AI service keep-alive ping sent");
+    } catch (e) {
+      console.error("❌ AI keep-alive failed:", e.message);
+    }
 
-      // Ping the Node server itself
-      try {
-        await axios.get(`${process.env.SERVER_URL}/health`);
-        console.log("✅ Node server keep-alive ping sent");
-      } catch (e) {
-        console.error("❌ Node keep-alive failed:", e.message);
-      }
-    },
-    10 * 60 * 1000,
-  ); // every 10 minutes
+    try {
+      await axios.get(`${process.env.SERVER_URL}/health`);
+      console.log("✅ Node server keep-alive ping sent");
+    } catch (e) {
+      console.error("❌ Node keep-alive failed:", e.message);
+    }
+  };
+
+  ping(); // ← fire immediately on startup
+  setInterval(ping, 10 * 60 * 1000); // then every 10 minutes
 };
-
-keepAlive();
 module.exports = app;
