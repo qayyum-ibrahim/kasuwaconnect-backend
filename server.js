@@ -9,6 +9,8 @@ const traderRoutes = require("./src/routes/trader.routes");
 const webhookRoutes = require("./src/routes/webhook.routes");
 const jobSeekerRoutes = require("./src/routes/jobseeker.routes");
 const jobRoutes = require("./src/routes/job.routes");
+const paymentRoutes = require("./src/routes/payment.routes");
+const axios = require("axios");
 
 const app = express();
 connectDB();
@@ -31,10 +33,34 @@ app.use("/api/traders", traderRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/jobseekers", jobSeekerRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/payments", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`KasuwaConnect API running on port ${PORT}`);
 });
+const keepAlive = () => {
+  setInterval(
+    async () => {
+      // Ping the AI service
+      try {
+        await axios.get(`${process.env.AI_SERVICE_URL}/health`);
+        console.log("✅ AI service keep-alive ping sent");
+      } catch (e) {
+        console.error("❌ AI keep-alive failed:", e.message);
+      }
 
+      // Ping the Node server itself
+      try {
+        await axios.get(`${process.env.SERVER_URL}/health`);
+        console.log("✅ Node server keep-alive ping sent");
+      } catch (e) {
+        console.error("❌ Node keep-alive failed:", e.message);
+      }
+    },
+    10 * 60 * 1000,
+  ); // every 10 minutes
+};
+
+keepAlive();
 module.exports = app;

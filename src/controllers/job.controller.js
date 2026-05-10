@@ -126,9 +126,18 @@ const getMatchedJobs = async (req, res) => {
     // Call AI matching service
     const matchResult = await matchJobs(seeker, openJobs);
     if (!matchResult) {
-      return res
-        .status(503)
-        .json({ success: false, message: "Matching service unavailable" });
+      return res.json({
+        success: true,
+        seeker: {
+          id: seeker._id,
+          name: `${seeker.firstName} ${seeker.lastName}`,
+        },
+        matches: openJobs
+          .slice(0, 5)
+          .map((job) => ({ job_id: job._id, score: null })),
+        message:
+          "Showing unranked results — matching service temporarily unavailable",
+      });
     }
 
     res.json({

@@ -1,0 +1,154 @@
+const Trader = require("../models/Trader.model");
+const JobSeeker = require("../models/JobSeeker.model");
+const Job = require("../models/Job.model");
+const Transaction = require("../models/Transaction.model");
+const {
+  inititatePayout,
+  getBankList,
+  getNipCode,
+} = require("../services/squad.service");
+
+// POST /api/payments/payout
+// Employer pays a hired job seeker
+const payWorker = async (req, res) => {
+  try {
+    const {
+      traderId,
+      seekerId,
+      jobId,
+      amount,
+      bankCode,
+      accountNumber,
+      accountName,
+    } = req.body;
+
+    // 1. Validate all parties exist
+    const [trader, seeker, job] = await Promise.all([
+      Trader.findById(traderId),
+      JobSeeker.findById(seekerId),
+      Job.findById(jobId),
+    ]);
+
+    if (!trader) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Trader not found" });
+    }
+    if (!seeker) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Job seeker not found" });
+    }
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // 2. Build a unique transaction reference
+    const transactionRef = `KCW_${traderId}_${seekerId}_${Date.now()}`;
+
+    // 3. Initiate Squad payout
+    const squadResponse = await inititatePayout({
+      transactionRef,
+      amount,
+      bankCode: bankCode || "000", // sandbox test bank code
+      nipCode: "0000000000",
+      accountNumber:
+        accountNumber ||
+        seeker.squadVirtualAccount?.accountNumber ||
+        "0000000000",
+      accountName: accountName || `${seeker.firstName} ${seeker.lastName}`,
+      narration: `Wage for: ${job.title}`,
+    });
+    console.log({ squadResponse });
+    if (!squadResponse.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Payout failed",
+        error: squadResponse.message,
+      });
+    }
+
+    // 4. Update seeker earnings
+    await JobSeeker.findByIdAndUpdate(seekerId, {
+      $inc: {
+        totalEarnings: amount,
+        completedGigs: 1,
+      },
+    });
+
+    // 5. Mark job as filled
+    await Job.findByIdAndUpdate(jobId, {
+      isFilled: true,
+      hiredSeeker: seekerId,
+    });
+
+    // 6. Record the payout transaction
+    await Transaction.create({
+      traderId,
+      squadTransactionRef: transactionRef,
+      virtualAccountNumber: accountNumber || "payout",
+      amount: amount * 100,
+      amountInNaira: amount,
+      currency: "NGN",
+      senderName: `${trader.firstName} ${trader.lastName}`,
+      narration: `Wage payment: ${job.title}`,
+      transactionDate: new Date(),
+      webhookVerified: false,
+    });
+
+    console.log(
+      `💸 Payout initiated: ${amount} NGN from ${trader.firstName} to ${seeker.firstName}`,
+    );
+
+    res.json({
+      success: true,
+      message: "Payout initiated successfully",
+      data: {
+        transactionRef,
+        amount,
+        recipient: `${seeker.firstName} ${seeker.lastName}`,
+        job: job.title,
+        squadResponse: squadResponse.data,
+      },
+    });
+  } catch (error) {
+    console.error("Payout error:", error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: "Payout failed",
+      error: error.response?.data || error.message,
+    });
+  }
+};
+
+// GET /api/payments/banks
+const getBanks = async (req, res) => {
+  try {
+    const result = await getBankList();
+    res.json({ success: true, data: result.data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/payments/history/:traderId
+const getPayoutHistory = async (req, res) => {
+  try {
+    const transactions = await Transaction.find({
+      traderId: req.params.traderId,
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select("-__v");
+
+    res.json({
+      success: true,
+      count: transactions.length,
+      data: transactions,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { payWorker, getBanks, getPayoutHistory };
