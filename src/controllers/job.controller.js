@@ -112,7 +112,12 @@ const getMatchedJobs = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Job seeker not found" });
     }
-
+    if (!seeker.isAvailable) {
+      return res.status(409).json({
+        success: false,
+        message: "You are currently on a job and unavailable for new matches",
+      });
+    }
     // Get all open jobs
     const openJobs = await Job.find({ isOpen: true, isFilled: false });
     if (openJobs.length === 0) {

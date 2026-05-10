@@ -43,6 +43,25 @@ const payWorker = async (req, res) => {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
 
+    if (job.isFilled) {
+      return res.status(409).json({
+        success: false,
+        message: "This job has already been filled and paid",
+        data: {
+          jobId: job._id,
+          title: job.title,
+          hiredSeeker: job.hiredSeeker,
+        },
+      });
+    }
+
+    if (job.traderId.toString() !== traderId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to pay for this job",
+      });
+    }
+
     // 2. Build a unique transaction reference
     const transactionRef = `KCW_${traderId}_${seekerId}_${Date.now()}`;
 
@@ -74,6 +93,7 @@ const payWorker = async (req, res) => {
         totalEarnings: amount,
         completedGigs: 1,
       },
+      isAvailable: true,
     });
 
     // 5. Mark job as filled
@@ -85,6 +105,8 @@ const payWorker = async (req, res) => {
     // 6. Record the payout transaction
     await Transaction.create({
       traderId,
+      seekerId,
+      jobId,
       squadTransactionRef: transactionRef,
       virtualAccountNumber: accountNumber || "payout",
       amount: amount * 100,
@@ -137,6 +159,8 @@ const getPayoutHistory = async (req, res) => {
     const transactions = await Transaction.find({
       traderId: req.params.traderId,
     })
+      .populate("jobId", "title category payAmount")
+      .populate("seekerId", "firstName lastName")
       .sort({ createdAt: -1 })
       .limit(50)
       .select("-__v");

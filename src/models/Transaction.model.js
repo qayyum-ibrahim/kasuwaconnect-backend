@@ -8,7 +8,12 @@ const transactionSchema = new mongoose.Schema(
       ref: "Trader",
       required: true,
     },
-
+    seekerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobSeeker",
+      default: null,
+    },
+    jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", default: null },
     // Squad transaction data
     squadTransactionRef: { type: String, unique: true, sparse: true },
     virtualAccountNumber: { type: String, required: true },

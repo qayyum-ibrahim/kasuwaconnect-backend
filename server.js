@@ -10,6 +10,8 @@ const webhookRoutes = require("./src/routes/webhook.routes");
 const jobSeekerRoutes = require("./src/routes/jobseeker.routes");
 const jobRoutes = require("./src/routes/job.routes");
 const paymentRoutes = require("./src/routes/payment.routes");
+const transactionRoutes = require("./src/routes/transaction.routes");
+
 const axios = require("axios");
 
 const app = express();
@@ -34,6 +36,7 @@ app.use("/api/webhooks", webhookRoutes);
 app.use("/api/jobseekers", jobSeekerRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
