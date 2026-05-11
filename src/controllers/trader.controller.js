@@ -118,4 +118,79 @@ const getAllTraders = async (req, res) => {
   }
 };
 
-module.exports = { registerTrader, getTrader, getAllTraders };
+// POST /api/auth/login
+const loginUser = async (req, res) => {
+  try {
+    const { phone, pin } = req.body;
+
+    // Check trader first
+    let user = await Trader.findOne({ phone });
+    let role = "trader";
+
+    if (!user) {
+      // Check job seeker
+      const JobSeeker = require("../models/JobSeeker.model");
+      user = await JobSeeker.findOne({ phone });
+      role = "seeker";
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this phone number",
+      });
+    }
+
+    if (user.pin !== pin) {
+      return res.status(401).json({
+        success: false,
+        message: "Incorrect PIN",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id:    user._id,
+        phone: user.phone,
+        role,
+        name:  `${user.firstName} ${user.lastName}`,
+        user,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/auth/check/:phone
+const checkPhone = async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const JobSeeker = require("../models/JobSeeker.model");
+
+    const trader = await Trader.findOne({ phone });
+    const seeker = await JobSeeker.findOne({ phone });
+
+    const user = trader || seeker;
+    if (!user) {
+      return res.json({ exists: false });
+    }
+
+    res.json({
+      exists: true,
+      role:   trader ? "trader" : "seeker",
+      name:   `${user.firstName} ${user.lastName}`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  registerTrader,
+  getTrader,
+  getAllTraders,
+  loginUser,
+  checkPhone,
+};

@@ -11,6 +11,7 @@ const jobSeekerRoutes = require("./src/routes/jobseeker.routes");
 const jobRoutes = require("./src/routes/job.routes");
 const paymentRoutes = require("./src/routes/payment.routes");
 const transactionRoutes = require("./src/routes/transaction.routes");
+const authRoutes = require("./src/routes/auth.routes");
 
 const axios = require("axios");
 
@@ -37,7 +38,7 @@ app.use("/api/jobseekers", jobSeekerRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/transactions", transactionRoutes);
-
+app.use("/api/auth", authRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`KasuwaConnect API running on port ${PORT}`);

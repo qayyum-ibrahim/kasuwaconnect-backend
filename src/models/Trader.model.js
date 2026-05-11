@@ -11,7 +11,7 @@ const traderSchema = new mongoose.Schema(
     dob: { type: String, required: true },
     address: { type: String, required: true, trim: true },
     gender: { type: String, required: true, enum: [1, 2] }, 
-    
+    pin: { type: String, required: true },
     // Trade Info
     tradeCategory: {
       type: String,
@@ -53,5 +53,6 @@ const traderSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
 
 module.exports = mongoose.model("Trader", traderSchema);
