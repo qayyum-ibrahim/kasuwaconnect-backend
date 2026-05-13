@@ -7,9 +7,13 @@ const jobSeekerSchema = new mongoose.Schema(
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, unique: true, trim: true },
     email: { type: String, trim: true, lowercase: true },
+    bvn: { type: String, required: true, trim: true },
+    dob: { type: String, required: true },
+    address: { type: String, required: true, trim: true },
+    gender: { type: String, required: true, enum: [1, 2] }, 
+    pin: { type: String, required: true },
     state: { type: String, required: true },
     localGovt: { type: String, trim: true },
-    pin: { type: String, required: true },
 
     // Skills + Matching Data
     skills: [

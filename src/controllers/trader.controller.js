@@ -11,6 +11,7 @@ const registerTrader = async (req, res) => {
       email,
       bvn,
       dob,
+      pin,
       address,
       gender,
       tradeCategory,
@@ -37,6 +38,7 @@ const registerTrader = async (req, res) => {
       email,
       bvn,
       dob,
+      pin,
       address,
       gender,
       tradeCategory,
@@ -151,10 +153,10 @@ const loginUser = async (req, res) => {
     res.json({
       success: true,
       data: {
-        id:    user._id,
+        id: user._id,
         phone: user.phone,
         role,
-        name:  `${user.firstName} ${user.lastName}`,
+        name: `${user.firstName} ${user.lastName}`,
         user,
       },
     });
@@ -179,8 +181,8 @@ const checkPhone = async (req, res) => {
 
     res.json({
       exists: true,
-      role:   trader ? "trader" : "seeker",
-      name:   `${user.firstName} ${user.lastName}`,
+      role: trader ? "trader" : "seeker",
+      name: `${user.firstName} ${user.lastName}`,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
