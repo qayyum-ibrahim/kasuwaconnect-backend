@@ -84,7 +84,7 @@ const payWorker = async (req, res) => {
       accountName: accountName || `${seeker.firstName} ${seeker.lastName}`,
       narration: `Wage for: ${job.title}`,
     });
-    console.log({ squadResponse });
+
     if (!squadResponse.success) {
       return res.status(400).json({
         success: false,
@@ -92,21 +92,6 @@ const payWorker = async (req, res) => {
         error: squadResponse.message,
       });
     }
-
-    // 4. Update seeker earnings
-    await JobSeeker.findByIdAndUpdate(seekerId, {
-      $inc: {
-        totalEarnings: amount,
-        completedGigs: 1,
-      },
-      isAvailable: true,
-    });
-
-    // 5. Mark job as filled
-    await Job.findByIdAndUpdate(jobId, {
-      isFilled: true,
-      hiredSeeker: seekerId,
-    });
 
     // 6. Record the payout transaction
     await Transaction.create({
