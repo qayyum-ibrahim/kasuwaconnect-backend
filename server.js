@@ -20,6 +20,9 @@ connectDB();
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
+
+// Must come BEFORE app.use(express.json())
+app.use("/api/webhooks/squad", express.raw({ type: "application/json" }));
 app.use(express.json());
 
 // Health check
