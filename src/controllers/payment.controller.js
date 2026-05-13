@@ -123,10 +123,53 @@ const payWorker = async (req, res) => {
       transactionDate: new Date(),
       webhookVerified: false,
     });
-
+    // 7. Update trader totals — same as webhook does
+    const updatedTrader = await Trader.findByIdAndUpdate(
+      traderId,
+      {
+        $inc: {
+          totalTransactions: 1,
+          totalVolume: amount,
+        },
+      },
+      { new: true },
+    );
     console.log(
       `💸 Payout initiated: ${amount} NGN from ${trader.firstName} to ${seeker.firstName}`,
     );
+    // 8. Trigger async credit score update — same pipeline as webhook
+    const { scoreTrader } = require("../services/ai.service");
+    scoreTrader(updatedTrader)
+      .then(async (scoreResult) => {
+        if (scoreResult) {
+          await Trader.findByIdAndUpdate(traderId, {
+            creditScore: scoreResult.credit_score,
+            creditTier: scoreResult.credit_tier,
+          });
+          console.log(
+            `📊 Credit score updated after payout: ${trader.firstName} → ${scoreResult.credit_score} (${scoreResult.credit_tier})`,
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Background scoring after payout failed:", err.message);
+      });
+
+    // 9. Update seeker earnings
+    await JobSeeker.findByIdAndUpdate(seekerId, {
+      $inc: {
+        totalEarnings: amount,
+        completedGigs: 1,
+      },
+    });
+
+    // 10. Mark job as filled
+    await Job.findByIdAndUpdate(jobId, {
+      isFilled: true,
+      hiredSeeker: seekerId,
+    });
+
+    console.log(`✅ Payout complete and credit pipeline triggered`);
 
     res.json({
       success: true,
