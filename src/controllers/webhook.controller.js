@@ -172,16 +172,10 @@ const testFireWebhook = async (req, res) => {
     };
 
     // Call our own webhook handler directly
-    // ✅ Bypass handleSquadWebhook entirely — call the business logic directly
-    // OR just inline the processing here for test purposes
-    // Don't reuse the real handler since it now expects a raw Buffer
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Test webhook fired",
-        payload: mockPayload,
-      });
+    req.body = mockPayload;
+    req.headers["x-squad-encrypted-body"] = "test";
+
+    await handleSquadWebhook(req, res);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
