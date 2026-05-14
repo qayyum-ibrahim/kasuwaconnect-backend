@@ -145,14 +145,18 @@ const payWorker = async (req, res) => {
       $inc: {
         totalEarnings: amount,
         completedGigs: 1,
+        isAvailable: true,
       },
     });
 
     // 10. Mark job as filled
-    await Job.findByIdAndUpdate(jobId, {
-      isFilled: true,
-      hiredSeeker: seekerId,
-    });
+    await Job.findByIdAndUpdate(
+      jobId,
+      {
+        isFilled: true,
+        hiredSeeker: seekerId,
+      },
+    );
 
     console.log(`✅ Payout complete and credit pipeline triggered`);
 

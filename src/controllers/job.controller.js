@@ -113,7 +113,7 @@ const getMatchedJobs = async (req, res) => {
         .json({ success: false, message: "Job seeker not found" });
     }
     if (!seeker.isAvailable) {
-      return res.status(409).json({
+      return res.status(200).json({
         success: false,
         message: "You are currently on a job and unavailable for new matches",
       });
